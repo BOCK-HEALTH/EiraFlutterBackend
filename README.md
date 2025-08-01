@@ -1,93 +1,104 @@
-Eira Mobile App Backend
-This repository contains the serverless Node.js backend for the Eira AI Health Assistant mobile application. It is built to be deployed on Vercel for seamless CI/CD, and it handles user authentication, chat history, and session management.
-Core Technologies
-Runtime: Node.js
-Deployment: Vercel Serverless Functions
-Authentication: Firebase Admin SDK (for verifying user ID tokens)
-Database: Neon (Serverless PostgreSQL)
-File Storage: Firebase Cloud Storage (for handling uploads like images, videos, etc.)
-API Endpoints
-All endpoints are located under the /api/ path and require an Authorization: Bearer <FirebaseIdToken> header for all requests.
-Method	Endpoint	Description
-GET	/api/getSessions	Fetches a list of all chat sessions for the authenticated user, ordered by most recent.
-GET	/api/getMessages	Fetches all messages for a specific session (?sessionId=...) or the most recent session if none is provided.
-POST	/api/storeMessage	Stores a new text-only message. Creates a new session if sessionId is null.
-POST	/api/storeFileMessage	(Deprecated) Handles direct file uploads. Replaced by the new signed URL flow.
-POST	/api/generateUploadUrl	(Step 1) Generates secure, temporary URLs for the client to upload files directly to Firebase Storage.
-POST	/api/finalizeUpload	(Step 2) After direct upload, this endpoint is called to save the file metadata to the database.
-POST	/api/updateSession	Updates the title or other properties of a specific chat session.
-POST	/api/deleteSession	Deletes a chat session and all associated messages for the authenticated user.
-Project Structure
-The project follows the standard Vercel serverless function structure.
-Generated code
-/
-├── api/                  # Vercel converts each file here into an API endpoint
-│   ├── _utils/           # Helper modules (not exposed as endpoints)
-│   │   ├── firebase.js   # Initializes Firebase Admin SDK
-│   │   └── neon.js       # Initializes Neon PostgreSQL connection pool
-│   ├── getMessages.js    # Endpoint logic for fetching messages
-│   └── ...               # Other endpoint files
-├── .env.development      # Local environment variables (NOT committed to Git)
-├── .gitignore            # Specifies files to be ignored by Git
-├── package.json          # Project dependencies and scripts
-└── vercel.json           # Vercel deployment configuration (e.g., for CORS headers)
-Use code with caution.
-Setup and Local Development
-To run this project on your local machine, follow these steps.
-1. Prerequisites
-Node.js (v18 or later)
-A Vercel account
-A Firebase project with Authentication and Storage enabled
-A Neon PostgreSQL database
-2. Clone and Install Dependencies
-Generated bash
-# Clone the repository
-git clone <your-repository-url>
-cd eira-flutter-backend-main
+🩺 Eira Mobile App Backend
+This repository contains the serverless Node.js backend for the Eira AI Health Assistant mobile application. It is built to be deployed on Vercel for seamless CI/CD and handles user authentication, chat history, and session management.
 
-# Install npm packages
+🧰 Core Technologies
+Area	Technology
+Runtime	Node.js
+Deployment	Vercel Serverless Functions
+Authentication	Firebase Admin SDK (ID token verification)
+Database	Neon (Serverless PostgreSQL)
+File Storage	Firebase Cloud Storage
+
+🔗 API Endpoints
+All endpoints are under /api/ and require an Authorization: Bearer <FirebaseIdToken> header.
+
+Method	Endpoint	Description
+GET	/api/getSessions	Fetches all chat sessions for the authenticated user (most recent first).
+GET	/api/getMessages	Fetches messages for a session (?sessionId=...) or the most recent one.
+POST	/api/storeMessage	Stores a new text-only message. Creates a session if sessionId is null.
+POST	/api/storeFileMessage	❌ Deprecated. Use generateUploadUrl & finalizeUpload instead.
+POST	/api/generateUploadUrl	(Step 1) Generates a signed upload URL for Firebase Storage.
+POST	/api/finalizeUpload	(Step 2) Saves uploaded file metadata to the database.
+POST	/api/updateSession	Updates session title or other properties.
+POST	/api/deleteSession	Deletes a session and all associated messages.
+
+📁 Project Structure
+graphql
+Copy
+Edit
+/
+├── api/                    # Vercel turns each file here into an API endpoint
+│   ├── _utils/             # Helper modules (not endpoints)
+│   │   ├── firebase.js     # Firebase Admin SDK setup
+│   │   └── neon.js         # Neon PostgreSQL connection pool
+│   ├── getMessages.js      # API endpoint for fetching messages
+│   └── ...                 # Other endpoints
+├── .env.development        # Local environment variables (ignored by Git)
+├── .gitignore              # Files to exclude from Git
+├── package.json            # Dependencies and scripts
+└── vercel.json             # Vercel config (e.g., for CORS)
+⚙️ Setup and Local Development
+1. Prerequisites
+Node.js (v18+)
+
+Vercel account
+
+Firebase project (Authentication + Storage enabled)
+
+Neon PostgreSQL database
+
+2. Clone & Install
+bash
+Copy
+Edit
+# Clone the repo
+git clone https://github.com/BOCK-HEALTH/EiraFlutterBackend.git
+cd EiraFlutterBackend
+
+# Install dependencies
 npm install
-Use code with caution.
-Bash
-3. Set Up Environment Variables
-Create a file named .env.development in the root of the project. Note: Your screenshot shows a typo (.env.develpoment); the correct name is .env.development.
-Copy the contents of your Firebase service account key and Neon connection string into this file.
-Generated code
+3. Configure Environment Variables
+Create a .env.development file in the root directory (📌 not .env.develpoment).
+
+env
+Copy
+Edit
 # .env.development
 
-# Neon Database Connection String
-DATABASE_URL="postgres://user:password@..."
+# Neon Database
+DATABASE_URL="postgres://user:password@neon-host/db"
 
-# Firebase Service Account Credentials
-FIREBASE_PROJECT_ID="your-gcp-project-id"
-FIREBASE_CLIENT_EMAIL="firebase-adminsdk-....@...iam.gserviceaccount.com"
+# Firebase Admin SDK
+FIREBASE_PROJECT_ID="your-project-id"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-abc123@your-project.iam.gserviceaccount.com"
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYourKeyHere...\n-----END PRIVATE KEY-----\n"
 
-# Firebase Storage Bucket URL
+# Firebase Storage
 FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
-Use code with caution.
-4. Run the Development Server
-Use the Vercel CLI to simulate the serverless environment locally.
-Generated bash
-# Install Vercel CLI globally (if you haven't already)
+4. Run Locally
+bash
+Copy
+Edit
+# Install Vercel CLI
 npm install -g vercel
 
-# Run the local development server
+# Start local serverless dev server
 vercel dev
-Use code with caution.
-Bash
-The API will now be running at http://localhost:3000.
-Deployment
-This project is configured for continuous deployment with Vercel.
-Push to GitHub: Every git push to the main branch will automatically trigger a new deployment.
-Environment Variables: Ensure that all the variables from your .env.development file are also set in your Vercel project's Settings > Environment Variables tab. The deployment will fail if these are not configured.
-Database Schema
-The application uses the following PostgreSQL schema on Neon.
-Generated sql
+Visit: http://localhost:3000
+
+🚀 Deployment on Vercel
+CI/CD: Every push to the main branch triggers a deployment.
+
+Environment Variables: Make sure to replicate your .env.development values in the Vercel project settings (Settings > Environment Variables).
+
+🗄️ PostgreSQL Schema (Neon)
+sql
+Copy
+Edit
 -- users table
 CREATE TABLE users (
-    email TEXT PRIMARY KEY,
-    name TEXT
+  email TEXT PRIMARY KEY,
+  name TEXT
 );
 
 -- chat_sessions table
@@ -100,13 +111,12 @@ CREATE TABLE chat_sessions (
 
 -- chat_history table
 CREATE TABLE chat_history (
-    id SERIAL PRIMARY KEY,
-    user_email TEXT REFERENCES users(email) ON DELETE CASCADE,
-    session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
-    message TEXT,
-    sender TEXT CHECK (sender IN ('user', 'eira')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- Columns to store arrays of file metadata
-    file_url TEXT[],
-    file_type TEXT[]
+  id SERIAL PRIMARY KEY,
+  user_email TEXT REFERENCES users(email) ON DELETE CASCADE,
+  session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
+  message TEXT,
+  sender TEXT CHECK (sender IN ('user', 'eira')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  file_url TEXT[],
+  file_type TEXT[]
 );
