@@ -1,0 +1,13 @@
+# .gitignore
+
+# Dependencies
+node_modules/
+
+# Vercel
+.vercel/
+
+# Environment files
+.env
+.env.development
+.env.local
+.vercel
