@@ -1,6 +1,5 @@
 Eira Mobile App Backend
 This repository contains the serverless Node.js backend for the Eira AI Health Assistant mobile application. It is built to be deployed on Vercel for seamless CI/CD, and it handles user authentication, chat history, and session management.
-![alt text](https://vercel.com/button)
 Core Technologies
 Runtime: Node.js
 Deployment: Vercel Serverless Functions
