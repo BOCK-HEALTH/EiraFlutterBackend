@@ -1,107 +1,102 @@
-🩺 Eira Mobile App Backend
-This repository contains the serverless Node.js backend for the Eira AI Health Assistant mobile application. It is built to be deployed on Vercel for seamless CI/CD and handles user authentication, chat history, and session management.
+# 🩺 Eira Mobile App Backend
 
-🧰 Core Technologies
-Area	Technology
-Runtime	Node.js
-Deployment	Vercel Serverless Functions
-Authentication	Firebase Admin SDK (ID token verification)
-Database	Neon (Serverless PostgreSQL)
-File Storage	Firebase Cloud Storage
+This repository contains the **serverless Node.js backend** for the **Eira AI Health Assistant** mobile application. It is built to be deployed on **Vercel** and handles **user authentication, chat history, session management, and file storage**.
 
-🔗 API Endpoints
-All endpoints are under /api/ and require an Authorization: Bearer <FirebaseIdToken> header.
+---
 
-Method	Endpoint	Description
-GET	/api/getSessions	Fetches all chat sessions for the authenticated user (most recent first).
-GET	/api/getMessages	Fetches messages for a session (?sessionId=...) or the most recent one.
-POST	/api/storeMessage	Stores a new text-only message. Creates a session if sessionId is null.
-POST	/api/storeFileMessage	❌ Deprecated. Use generateUploadUrl & finalizeUpload instead.
-POST	/api/generateUploadUrl	(Step 1) Generates a signed upload URL for Firebase Storage.
-POST	/api/finalizeUpload	(Step 2) Saves uploaded file metadata to the database.
-POST	/api/updateSession	Updates session title or other properties.
-POST	/api/deleteSession	Deletes a session and all associated messages.
+## 🧰 Core Technologies
 
-📁 Project Structure
-graphql
-Copy
-Edit
+| Component          | Technology                    |
+| ------------------ | ----------------------------- |
+| **Runtime**        | Node.js                       |
+| **Deployment**     | Vercel Serverless Functions   |
+| **Authentication** | Firebase Admin SDK            |
+| **Database**       | Neon (PostgreSQL, serverless) |
+| **File Storage**   | Firebase Cloud Storage        |
+
+---
+
+## 🔗 API Endpoints
+
+> All endpoints are under `/api/` and require an `Authorization: Bearer <FirebaseIdToken>` header.
+
+| Method | Endpoint                 | Description                                                                   |
+| ------ | ------------------------ | ----------------------------------------------------------------------------- |
+| GET    | `/api/getSessions`       | Fetch all chat sessions for the authenticated user (most recent first).       |
+| GET    | `/api/getMessages`       | Fetch messages for a session (`?sessionId=...`) or the most recent one.       |
+| POST   | `/api/storeMessage`      | Stores a new **text-only** message. Creates a session if `sessionId` is null. |
+| POST   | `/api/storeFileMessage`  | ❌ **Deprecated.** Use `generateUploadUrl` & `finalizeUpload` instead.         |
+| POST   | `/api/generateUploadUrl` | Generates a signed upload URL for Firebase Storage.                           |
+| POST   | `/api/finalizeUpload`    | Saves uploaded file metadata to the database.                                 |
+| POST   | `/api/updateSession`     | Updates session title or properties.                                          |
+| POST   | `/api/deleteSession`     | Deletes a session and all associated messages.                                |
+
+---
+
+## 📁 Project Structure
+
+```
 /
 ├── api/                    # Vercel turns each file here into an API endpoint
-│   ├── _utils/             # Helper modules (not endpoints)
+│   ├── _utils/             # Helper modules
 │   │   ├── firebase.js     # Firebase Admin SDK setup
-│   │   └── neon.js         # Neon PostgreSQL connection pool
-│   ├── getMessages.js      # API endpoint for fetching messages
+│   │   └── neon.js         # Neon DB connection pool
+│   ├── getMessages.js      # API logic
 │   └── ...                 # Other endpoints
-├── .env.development        # Local environment variables (ignored by Git)
-├── .gitignore              # Files to exclude from Git
-├── package.json            # Dependencies and scripts
-└── vercel.json             # Vercel config (e.g., for CORS)
-⚙️ Setup and Local Development
-1. Prerequisites
-Node.js (v18+)
+├── .env.development        # Environment variables (ignored by Git)
+├── .gitignore              # Files to ignore
+├── package.json            # Dependencies
+└── vercel.json             # Vercel config
+```
 
-Vercel account
+---
 
-Firebase project (Authentication + Storage enabled)
+## ⚙️ Setup and Local Development
 
-Neon PostgreSQL database
+### 1. Prerequisites
 
-2. Clone & Install
-bash
-Copy
-Edit
-# Clone the repo
+* Node.js (v18+)
+* [Vercel CLI](https://vercel.com/docs/cli)
+* [Firebase Project](https://console.firebase.google.com/)
+* [Neon PostgreSQL Account](https://neon.tech)
+
+---
+
+### 2. Clone and Install Dependencies
+
+```bash
+# Clone the repository
 git clone https://github.com/BOCK-HEALTH/EiraFlutterBackend.git
 cd EiraFlutterBackend
 
 # Install dependencies
 npm install
-3. Configure Environment Variables
-Create a .env.development file in the root directory (📌 not .env.develpoment).
+```
 
-env
-Copy
-Edit
-# .env.development
+---
 
-# Neon Database
-DATABASE_URL="postgres://user:password@neon-host/db"
+## 🗃️ Set Up Neon (PostgreSQL)
 
-# Firebase Admin SDK
-FIREBASE_PROJECT_ID="your-project-id"
-FIREBASE_CLIENT_EMAIL="firebase-adminsdk-abc123@your-project.iam.gserviceaccount.com"
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYourKeyHere...\n-----END PRIVATE KEY-----\n"
+### ✅ Step-by-Step:
 
-# Firebase Storage
-FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
-4. Run Locally
-bash
-Copy
-Edit
-# Install Vercel CLI
-npm install -g vercel
+1. **Go to** [https://neon.tech](https://neon.tech) and sign up.
 
-# Start local serverless dev server
-vercel dev
-Visit: http://localhost:3000
+2. **Create a new project** (select PostgreSQL).
 
-🚀 Deployment on Vercel
-CI/CD: Every push to the main branch triggers a deployment.
+3. **Copy the connection string**, e.g.:
 
-Environment Variables: Make sure to replicate your .env.development values in the Vercel project settings (Settings > Environment Variables).
+   ```
+   postgres://your_user:your_password@ep-neon-db.neon.tech/dbname
+   ```
 
-🗄️ PostgreSQL Schema (Neon)
-sql
-Copy
-Edit
--- users table
+4. **Open the SQL Editor** and run the schema below:
+
+```sql
 CREATE TABLE users (
   email TEXT PRIMARY KEY,
   name TEXT
 );
 
--- chat_sessions table
 CREATE TABLE chat_sessions (
   id SERIAL PRIMARY KEY,
   user_email TEXT REFERENCES users(email) ON DELETE CASCADE,
@@ -109,7 +104,6 @@ CREATE TABLE chat_sessions (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- chat_history table
 CREATE TABLE chat_history (
   id SERIAL PRIMARY KEY,
   user_email TEXT REFERENCES users(email) ON DELETE CASCADE,
@@ -120,3 +114,84 @@ CREATE TABLE chat_history (
   file_url TEXT[],
   file_type TEXT[]
 );
+```
+
+---
+
+## 🔐 Set Up Firebase Admin SDK
+
+### ✅ Steps:
+
+1. Go to [Firebase Console](https://console.firebase.google.com/).
+2. Select your project > Go to **Project Settings** > **Service Accounts**.
+3. Click **Generate New Private Key** – this downloads a JSON file.
+4. Open the JSON and copy:
+
+   * `project_id`
+   * `client_email`
+   * `private_key`
+
+---
+
+## 📄 Environment Variables Setup
+
+Create a file named `.env.development` in the project root:
+
+```env
+# Neon Database
+DATABASE_URL="postgres://your_user:your_password@ep-neon-db.neon.tech/dbname"
+
+# Firebase Admin
+FIREBASE_PROJECT_ID="your_project_id"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-abc123@your_project.iam.gserviceaccount.com"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...<newline escaped key>...\n-----END PRIVATE KEY-----\n"
+
+# Firebase Storage
+FIREBASE_STORAGE_BUCKET="your_project_id.appspot.com"
+```
+
+---
+
+## ▶️ Local Development
+
+```bash
+# Install Vercel CLI globally
+npm install -g vercel
+
+# Start local serverless environment
+vercel dev
+```
+
+Visit: [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🚀 Deploy to Vercel (CI/CD)
+
+### ✅ Initial Setup:
+
+1. Go to [https://vercel.com](https://vercel.com) and sign in.
+2. Click **"Add New Project"**, import this GitHub repo.
+3. **Choose "Framework: Other"** (since this is a custom Node.js backend).
+4. In **Environment Variables**, add all entries from your `.env.development`.
+
+### ✅ Trigger Deployments
+
+* Every `git push` to the `main` branch triggers a new deployment.
+* You can manually trigger a deployment from the Vercel dashboard too.
+
+---
+
+## 🧪 Testing API Endpoints
+
+Use tools like [Postman](https://www.postman.com/) or [cURL](https://curl.se/) with an authenticated Firebase ID token:
+
+Example `GET` request to fetch sessions:
+
+```http
+GET /api/getSessions
+Host: your-vercel-app.vercel.app
+Authorization: Bearer <FirebaseIdToken>
+```
+
+
