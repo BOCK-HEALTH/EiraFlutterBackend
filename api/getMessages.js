@@ -1,7 +1,6 @@
 const path = require('path');
 const {admin} = require(path.resolve(process.cwd(), 'api/_utils/firebase.js'));
-const pool = require(path.resolve(process.cwd(), 'api/_utils/db.js'));
-
+const pool = require(path.resolve(process.cwd(), 'api/_utils/neon.js'));
 
 module.exports = async (request, response) => {
   if (request.method === 'OPTIONS') return response.status(200).end();
