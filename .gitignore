@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-# Dependencies
-/node_modules
-
-# Environment variables
-.env.development
-.env
-=======
 # .gitignore
 
 # Dependencies
@@ -19,4 +11,3 @@ node_modules/
 .env.development
 .env.local
 .vercel
->>>>>>> f512821c5463187ff6c0f5b027b92d58a729b7d0
