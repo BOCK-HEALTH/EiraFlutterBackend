@@ -1,24 +1,50 @@
 {
-  "name": "eira-backend",
+
+  "name": "eirabackendaws",
+
   "version": "1.0.0",
+
   "main": "index.js",
+
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+
+    "test": "echo \"Error: no test specified\" && exit 1",
+
+    "start": "node server.js"
+
   },
 
   "engines": {
+
     "node": "20.x"
+
   },
 
   "keywords": [],
+
   "author": "",
+
   "license": "ISC",
-  "description": "",
+
   "dependencies": {
-    "@vercel/postgres": "^0.10.0",
-    "dotenv": "^17.2.0",
+
+    "aws-sdk": "^2.1692.0",
+
+    "cors": "^2.8.5",
+
+    "dotenv": "^17.2.1",
+
+    "express": "^5.1.0",
+
     "firebase-admin": "^13.4.0",
+
     "formidable": "^3.5.4",
+
     "pg": "^8.16.3"
-  }
+
+  },
+
+  "description": ""
+
 }
+

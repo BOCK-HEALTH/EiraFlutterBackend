@@ -1,6 +1,11 @@
 const path = require('path');
 const {admin} = require(path.resolve(process.cwd(), 'api/_utils/firebase.js'));
+<<<<<<< HEAD
 const pool = require(path.resolve(process.cwd(), 'api/_utils/neon.js'));
+=======
+const pool = require(path.resolve(process.cwd(), 'api/_utils/db.js'));
+
+>>>>>>> 4488980 (Initial backend deployment setup)
 
 module.exports = async (request, response) => {
   if (request.method === 'OPTIONS') return response.status(200).end();
@@ -45,4 +50,8 @@ module.exports = async (request, response) => {
     console.error("Error in getMessages:", error);
     return response.status(500).send({ error: 'Internal Server Error' });
   }
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 4488980 (Initial backend deployment setup)
