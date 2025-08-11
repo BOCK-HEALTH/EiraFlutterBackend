@@ -35,5 +35,5 @@ app.get('/', (req, res) => {
 
 // --- START SERVER ---
 app.listen(8080, '0.0.0.0', () => {
-  console.log(`Server is listening on http://0.0.0.0:${port}`);
+  console.log(`Server is listening on http://0.0.0.0:${8080}`);
 });
