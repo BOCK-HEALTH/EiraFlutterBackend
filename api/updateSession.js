@@ -1,10 +1,9 @@
-<<<<<<< HEAD
 // updatesession.js
 
 const { Client } = require('pg');
 const { getUserEmailFromToken } = require('./_utils/firebase.js');
 
-export default async function handler(req, res) {
+module.exports = async (request, response) => {
   // --- START OF FIX ---
   // Handle the OPTIONS preflight request for CORS before any other logic
   if (req.method === 'OPTIONS') {
@@ -44,18 +43,3 @@ export default async function handler(req, res) {
     await client.end();
   }
 }
-=======
-
-// api/_utils/db.js
-const { Pool } = require('pg');
-
-// This single line will read all connection details from the DATABASE_URL environment variable
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // Required for cloud providers like AWS RDS and Neon
-  },
-});
-
-module.exports = pool;
->>>>>>> 4488980 (Initial backend deployment setup)
