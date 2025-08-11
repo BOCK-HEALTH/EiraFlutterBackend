@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # .gitignore
 
 # Dependencies
@@ -11,3 +12,12 @@ node_modules/
 .env.development
 .env.local
 .vercel
+=======
+# Dependencies
+/node_modules
+
+# Environment variables
+.env.development
+.env
+
+>>>>>>> 4488980 (Initial backend deployment setup)
