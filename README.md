@@ -1,4 +1,4 @@
-# **Eira Backend – AWS Deployment Guide **
+# Eira Backend – AWS Deployment Guide 
 
 ## **Overview**
 
