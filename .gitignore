@@ -1,18 +1,5 @@
-<<<<<<< HEAD
 # .gitignore
 
-# Dependencies
-node_modules/
-
-# Vercel
-.vercel/
-
-# Environment files
-.env
-.env.development
-.env.local
-.vercel
-=======
 # Dependencies
 /node_modules
 
@@ -20,4 +7,3 @@ node_modules/
 .env.development
 .env
 
->>>>>>> 4488980 (Initial backend deployment setup)
