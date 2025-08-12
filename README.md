@@ -1,8 +1,8 @@
-# **Eira Backend – AWS Deployment Guide (No Nginx)**
+# **Eira Backend – AWS Deployment Guide **
 
 ## **Overview**
 
-This guide explains how to deploy **Eira Backend** on AWS EC2 securely **without** Nginx, including:
+This guide explains how to deploy **Eira Backend** on AWS EC2 securely  including:
 
 * Launching EC2
 * Installing dependencies
