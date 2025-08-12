@@ -12,41 +12,6 @@ This guide explains how to deploy **Eira Backend** on AWS EC2 securely  includin
 
 ---
 
-          ┌─────────────────────┐
-          │     Internet        │
-          └─────────▲───────────┘
-                    │
-              Public IP :8080
-                    │
-          ┌─────────┴───────────┐
-          │      EC2 Instance   │
-          │  (Backend Server)   │
-          └─────────┬───────────┘
-                    │
-          ┌─────────┴───────────┐
-          │ Security Group (EC2)│
-          │ Inbound: 8080 (0.0.0.0/0)
-          │ Outbound: All        │
-          └─────────┬───────────┘
-                    │
-      ┌─────────────┼────────────────┐
-      │                              │
-      ▼                              ▼
-┌───────────────┐           ┌───────────────────┐
-│ RDS Instance  │           │  S3 Bucket        │
-│ (MySQL/Postgres│           │ (File Storage)    │
-└───────▲───────┘           └────────▲──────────┘
-        │                            │
-┌───────┴─────────┐          ┌───────┴──────────┐
-│ Security Group   │          │ IAM Permissions │
-│ Inbound: 3306    │          │ (s3:GetObject,   │
-│ from EC2 SG      │          │  s3:PutObject,   │
-└─────────────────┘          │  s3:DeleteObject)│
-                              └─────────────────┘
-
-
-
-
 ## **1. Prerequisites**
 
 * AWS account with EC2 and IAM permissions
