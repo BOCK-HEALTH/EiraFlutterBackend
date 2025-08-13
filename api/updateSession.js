@@ -1,11 +1,19 @@
-// api/updateSession.js (SECURE)
-const pool = require('./_utils/db');
-const { getUserEmailFromToken } = require('./_utils/firebase');
 
-module.exports = async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+// updatesession.js
+
+const { Client } = require('pg');
+const { getUserEmailFromToken } = require('./_utils/firebase.js');
+
+module.exports = async (request, response) => {
+  // --- START OF FIX ---
+  // Handle the OPTIONS preflight request for CORS before any other logic
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Or your specific domain
+    res.setHeader('Access-Control-Allow-Methods', 'PUT, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    return res.status(204).end();
+
   }
 
   const { sessionId, title } = req.body;
@@ -32,4 +40,5 @@ module.exports = async (req, res) => {
     console.error('Error updating session:', err);
     res.status(500).json({ error: 'Database error' });
   }
-};
+
+}

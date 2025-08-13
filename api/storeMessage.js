@@ -1,16 +1,18 @@
-// api/storeMessage.js (SECURE)
-const pool = require('./_utils/db');
-const { getUserEmailFromToken } = require('./_utils/firebase');
 
-module.exports = async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
-  }
-  
-  const { message, sessionId: existingSessionId, title } = req.body;
-  if (!message) {
-      return res.status(400).json({ error: 'Message content is required.' });
+const path = require('path');
+const {admin} = require(path.resolve(process.cwd(), 'api/_utils/firebase.js'));
+
+
+const pool = require(path.resolve(process.cwd(), 'api/_utils/db.js'));
+
+
+module.exports = async (request, response) => {
+  if (request.method === 'OPTIONS') return response.status(200).end();
+
+  const authHeader = request.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return response.status(401).send({ error: 'Unauthorized' });
+
   }
 
   let client;
@@ -52,3 +54,4 @@ module.exports = async (req, res) => {
     if (client) client.release();
   }
 };
+

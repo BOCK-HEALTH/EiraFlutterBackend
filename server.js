@@ -30,6 +30,8 @@ app.post('/api/messages', storeMessageHandler);
 app.post('/api/file-messages', storeFileMessageHandler);
 app.put('/api/sessions', updateSessionHandler);
 
-app.listen(port, () => {
-  console.log(`Server is listening on http://localhost:${port}`);
+// --- START SERVER ---
+app.listen(8080, '0.0.0.0', () => {
+  console.log(`Server is listening on http://0.0.0.0:${8080}`);
 });
+

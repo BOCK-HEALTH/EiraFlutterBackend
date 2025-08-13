@@ -2,10 +2,17 @@
 const pool = require('./_utils/db');
 const { getUserEmailFromToken } = require('./_utils/firebase');
 
-module.exports = async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+
+const path = require('path');
+const {admin} = require(path.resolve(process.cwd(), 'api/_utils/firebase.js'));
+
+const pool = require(path.resolve(process.cwd(), 'api/_utils/db.js'));
+
+
+module.exports = async (request, response) => {
+  if (request.method === 'OPTIONS') {
+    return response.status(200).end();
+
   }
 
   try {
@@ -23,4 +30,6 @@ module.exports = async (req, res) => {
     console.error('Error fetching sessions:', err);
     res.status(500).json({ error: 'Database error' });
   }
+
 };
+
