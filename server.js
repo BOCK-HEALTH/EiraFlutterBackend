@@ -1,39 +1,35 @@
+// server.js
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
-// --- Load environment variables from .env.development using absolute path ---
-require('dotenv').config({ path: path.resolve(__dirname, '.env.development') });
+// Load environment variables. We'll create the .env file on the server.
+require('dotenv').config();
 
-// --- IMPORT YOUR ROUTE HANDLERS ---
-const getSessionsHandler = require('./api/getSessions.js');
-const getMessagesHandler = require('./api/getMessages.js');
-const storeMessageHandler = require('./api/storeMessage.js');
-const storeFileMessageHandler = require('./api/storeFileMessage.js');
-const deleteSessionHandler = require('./api/deleteSession.js');
-const updateSessionHandler = require('./api/updateSession.js');
+// --- IMPORT YOUR NEW ROUTE HANDLERS ---
+const getSessionsHandler = require('./api/getSessions');
+const getMessagesHandler = require('./api/getMessages');
+const storeMessageHandler = require('./api/storeMessage');
+const storeFileMessageHandler = require('./api/storeFileMessage');
+const deleteSessionHandler = require('./api/deleteSession');
+const updateSessionHandler = require('./api/updateSession');
 
 const app = express();
 const port = process.env.PORT || 8080;
 
-// --- GLOBAL MIDDLEWARE ---
-app.use(cors()); // Enable CORS for all routes
-app.use(express.json()); // Parse JSON bodies
+// --- MIDDLEWARE ---
+app.use(cors()); // Handles CORS for all routes
+app.use(express.json()); // Handles parsing JSON request bodies
 
 // --- API ROUTES ---
-app.get('/api/getSessions', getSessionsHandler);
-app.get('/api/getMessages', getMessagesHandler);
-app.post('/api/storeMessage', storeMessageHandler);
-app.post('/api/storeFileMessage', storeFileMessageHandler);
-app.delete('/api/deleteSession', deleteSessionHandler);
-app.put('/api/updateSession', updateSessionHandler);
+// Map URL endpoints to your handler files.
+app.get('/api/sessions', getSessionsHandler);       // e.g., /api/sessions?email=user@example.com
+app.get('/api/messages', getMessagesHandler);     // e.g., /api/messages?session_id=123
+app.delete('/api/sessions', deleteSessionHandler);  // e.g., /api/sessions?session_id=123
 
-// --- HEALTH CHECK ROUTE ---
-app.get('/', (req, res) => {
-  res.status(200).send('Eira Backend Server is running!');
-});
+app.post('/api/messages', storeMessageHandler);
+app.post('/api/file-messages', storeFileMessageHandler);
+app.put('/api/sessions', updateSessionHandler);
 
-// --- START SERVER ---
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server is listening on http://0.0.0.0:${port}`);
+app.listen(port, () => {
+  console.log(`Server is listening on http://localhost:${port}`);
 });
