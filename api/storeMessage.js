@@ -1,18 +1,16 @@
+// api/storeMessage.js (FINAL SECURE CODE)
+const pool = require('./_utils/db');
+const { getUserEmailFromToken } = require('./_utils/firebase');
 
-const path = require('path');
-const {admin} = require(path.resolve(process.cwd(), 'api/_utils/firebase.js'));
-
-
-const pool = require(path.resolve(process.cwd(), 'api/_utils/db.js'));
-
-
-module.exports = async (request, response) => {
-  if (request.method === 'OPTIONS') return response.status(200).end();
-
-  const authHeader = request.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return response.status(401).send({ error: 'Unauthorized' });
-
+module.exports = async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  }
+  
+  const { message, sessionId: existingSessionId, title } = req.body;
+  if (!message) {
+      return res.status(400).json({ error: 'Message content is required.' });
   }
 
   let client;
@@ -28,7 +26,6 @@ module.exports = async (request, response) => {
     let currentSessionId = existingSessionId;
 
     if (!currentSessionId) {
-        // Create a new session if one isn't provided
         const sessionTitle = title || `Chat on ${new Date().toLocaleDateString()}`;
         const newSessionResult = await client.query(
             "INSERT INTO chat_sessions (user_email, title) VALUES ($1, $2) RETURNING id",
@@ -54,4 +51,3 @@ module.exports = async (request, response) => {
     if (client) client.release();
   }
 };
-
