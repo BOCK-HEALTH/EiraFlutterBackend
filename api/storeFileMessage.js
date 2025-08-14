@@ -1,4 +1,4 @@
-// api/storeFileMessage.js (FINAL SECURE CODE)
+// api/storeFileMessage.js (FINAL ORGANIZED VERSION 2.0)
 const { IncomingForm } = require('formidable');
 const fs = require('fs/promises');
 const AWS = require('aws-sdk');
@@ -11,6 +11,46 @@ const s3 = new AWS.S3({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     region: process.env.AWS_REGION
 });
+
+// --- NEW AND IMPROVED HELPER FUNCTION ---
+// This function now correctly separates video and a wider range of document types.
+function getFolderForMimeType(mimeType) {
+    if (!mimeType) return 'other'; // A default folder for any unknown file types
+
+    // 1. Check for video files first
+    if (mimeType.startsWith('video/')) {
+        return 'video';
+    }
+    // 2. Check for audio files
+    if (mimeType.startsWith('audio/')) {
+        return 'audio';
+    }
+    // 3. Check for image files
+    if (mimeType.startsWith('image/')) {
+        return 'image';
+    }
+
+    // 4. Check against a specific list of document MIME types
+    const documentMimeTypes = [
+        'application/pdf',
+        'application/msword', // .doc
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+        'application/vnd.ms-powerpoint', // .ppt
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+        'application/vnd.ms-excel', // .xls
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'text/plain', // .txt
+        'text/csv'    // .csv
+    ];
+
+    if (documentMimeTypes.includes(mimeType) || mimeType.startsWith('text/')) {
+        return 'documents';
+    }
+    
+    // 5. If it's none of the above, place it in a general 'other' folder.
+    return 'other';
+}
+// ------------------------------------
 
 module.exports = async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
@@ -43,10 +83,8 @@ module.exports = async (req, res) => {
         client = await pool.connect();
         await client.query('BEGIN');
 
-        // Upsert user to ensure they exist
         await client.query('INSERT INTO users (email, name) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING', [userEmail, userEmail.split('@')[0]]);
         
-        // Create a new session if one isn't provided
         if (!currentSessionId) {
             const newSessionResult = await client.query(
                 "INSERT INTO chat_sessions (user_email, title) VALUES ($1, $2) RETURNING id",
@@ -55,17 +93,17 @@ module.exports = async (req, res) => {
             currentSessionId = newSessionResult.rows[0].id;
         }
 
-        // Upload to S3
-        const s3Key = `${userEmail}/${Date.now()}_${uploadedFile.originalFilename}`;
+        const fileTypeFolder = getFolderForMimeType(uploadedFile.mimetype);
+        const s3Key = `${userEmail}/${fileTypeFolder}/${Date.now()}_${uploadedFile.originalFilename}`;
+
         const uploadParams = {
-    Bucket: process.env.S3_BUCKET_NAME,
-    Key: s3Key,
-    Body: fileBuffer,
-    ContentType: uploadedFile.mimetype
-};
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: s3Key,
+            Body: fileBuffer,
+            ContentType: uploadedFile.mimetype
+        };
         const s3Data = await s3.upload(uploadParams).promise();
 
-        // Store message in database
         const messageQuery = `
           INSERT INTO chat_history (user_email, message, sender, session_id, file_url, file_type) 
           VALUES ($1, $2, 'user', $3, $4, $5) RETURNING *
