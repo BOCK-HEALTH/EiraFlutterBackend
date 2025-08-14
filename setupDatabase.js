@@ -1,4 +1,10 @@
-// setupDatabase.js
+// setupDatabase.js (CORRECTED)
+
+// --- THIS IS THE FIX ---
+// This line MUST be at the top to load the .env file before anything else runs.
+require('dotenv').config();
+// ----------------------
+
 const pool = require('./api/_utils/db');
 
 // All the correct CREATE TABLE commands are here in one multi-line string.
