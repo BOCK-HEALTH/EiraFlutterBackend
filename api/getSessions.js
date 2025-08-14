@@ -1,18 +1,11 @@
-// api/getSessions.js (SECURE)
+// api/getSessions.js (FINAL SECURE CODE)
 const pool = require('./_utils/db');
 const { getUserEmailFromToken } = require('./_utils/firebase');
 
-
-const path = require('path');
-const {admin} = require(path.resolve(process.cwd(), 'api/_utils/firebase.js'));
-
-const pool = require(path.resolve(process.cwd(), 'api/_utils/db.js'));
-
-
-module.exports = async (request, response) => {
-  if (request.method === 'OPTIONS') {
-    return response.status(200).end();
-
+module.exports = async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
   }
 
   try {
@@ -23,13 +16,11 @@ module.exports = async (request, response) => {
 
     const result = await pool.query(
       'SELECT * FROM chat_sessions WHERE user_email = $1 ORDER BY created_at DESC',
-      [userEmail] // Use the verified email
+      [userEmail]
     );
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching sessions:', err);
     res.status(500).json({ error: 'Database error' });
   }
-
 };
-
