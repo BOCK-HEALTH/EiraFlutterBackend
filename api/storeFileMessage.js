@@ -1,4 +1,3 @@
-// api/storeFileMessage.js (FINAL ORGANIZED VERSION 2.0)
 const { IncomingForm } = require('formidable');
 const fs = require('fs/promises');
 const AWS = require('aws-sdk');
@@ -12,47 +11,43 @@ const s3 = new AWS.S3({
     region: process.env.AWS_REGION
 });
 
-// --- NEW AND IMPROVED HELPER FUNCTION ---
-// This function now correctly separates video and a wider range of document types.
+// --- FINALIZED HELPER FUNCTION ---
 function getFolderForMimeType(mimeType) {
-    if (!mimeType) return 'other'; // A default folder for any unknown file types
+    if (!mimeType) return 'documents'; // Default for unknown types
 
-    // 1. Check for video files first
-    if (mimeType.startsWith('video/')) {
-        return 'video';
-    }
-    // 2. Check for audio files
     if (mimeType.startsWith('audio/')) {
         return 'audio';
     }
-    // 3. Check for image files
     if (mimeType.startsWith('image/')) {
         return 'image';
     }
-
-    // 4. Check against a specific list of document MIME types
+    
+    // Check for specific document types
     const documentMimeTypes = [
         'application/pdf',
-        'application/msword', // .doc
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-        'application/vnd.ms-powerpoint', // .ppt
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-        'application/vnd.ms-excel', // .xls
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'text/plain', // .txt
-        'text/csv'    // .csv
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+        'text/csv'
     ];
 
     if (documentMimeTypes.includes(mimeType) || mimeType.startsWith('text/')) {
         return 'documents';
     }
     
-    // 5. If it's none of the above, place it in a general 'other' folder.
-    return 'other';
+    // --- THIS IS THE FIX ---
+    // Any remaining file types (which in your case are videos) will now go into the 'video' folder.
+    // This directly changes the 'other' folder to be named 'video'.
+    return 'video'; 
 }
 // ------------------------------------
 
 module.exports = async (req, res) => {
+    // The rest of the file remains exactly the same...
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
         return res.status(401).json({ error: 'Unauthorized: No token provided' });
