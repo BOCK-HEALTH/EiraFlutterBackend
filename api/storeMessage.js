@@ -1,4 +1,4 @@
-// api/storeMessage.js (FINAL SECURE CODE)
+// api/storeMessage.js (FINAL CORRECTED CODE)
 const pool = require('./_utils/db');
 const { getUserEmailFromToken } = require('./_utils/firebase');
 
@@ -23,9 +23,19 @@ module.exports = async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
+    // --- THIS IS THE FIX ---
+    // First, ensure the user exists in the 'users' table before doing anything else.
+    // The ON CONFLICT clause makes this a safe "upsert" - it does nothing if the user already exists.
+    await client.query(
+        'INSERT INTO users (email, name) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING',
+        [userEmail, userEmail.split('@')[0]] // Use the email as the name for simplicity
+    );
+    // ----------------------
+
     let currentSessionId = existingSessionId;
 
     if (!currentSessionId) {
+        // Now that the user is guaranteed to exist, this INSERT will succeed.
         const sessionTitle = title || `Chat on ${new Date().toLocaleDateString()}`;
         const newSessionResult = await client.query(
             "INSERT INTO chat_sessions (user_email, title) VALUES ($1, $2) RETURNING id",
