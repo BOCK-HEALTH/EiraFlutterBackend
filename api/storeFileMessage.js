@@ -1,4 +1,4 @@
-// api/storeFileMessage.js (FINAL CORRECTED LOGIC 3.0)
+// api/storeFileMessage.js (DEFINITIVE VERSION 5.0)
 const { IncomingForm } = require('formidable');
 const fs = require('fs/promises');
 const AWS = require('aws-sdk');
@@ -12,44 +12,38 @@ const s3 = new AWS.S3({
     region: process.env.AWS_REGION
 });
 
-// --- FINALIZED AND CORRECT HELPER FUNCTION ---
-// This version explicitly checks for each category, ensuring correct placement.
-function getFolderForMimeType(mimeType) {
-    if (!mimeType) return 'documents'; // Default for safety
-
-    // 1. Check for video first
-    if (mimeType.startsWith('video/')) {
-        return 'video';
-    }
-    // 2. Then check for audio
-    if (mimeType.startsWith('audio/')) {
-        return 'audio';
-    }
-    // 3. Then check for images
-    if (mimeType.startsWith('image/')) {
-        return 'image';
-    }
-    
-    // 4. Check against a list of common document types
-    const documentMimeTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-        'application/vnd.ms-excel', // .xls
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-    ];
-    
-    if (documentMimeTypes.includes(mimeType) || mimeType.startsWith('text/')) {
-        return 'documents';
+// --- DEFINITIVE HELPER FUNCTION ---
+// This version uses a two-layered check: first MIME type, then filename extension as a fallback.
+// This is the most robust way to categorize files.
+function getFolderForFile(file) {
+    // Layer 1: Check the MIME type first.
+    if (file.mimetype) {
+        if (file.mimetype.startsWith('video/')) return 'video';
+        if (file.mimetype.startsWith('audio/')) return 'audio';
+        if (file.mimetype.startsWith('image/')) return 'image';
     }
 
-    // 5. If it matches nothing else, place it in an 'other' folder.
+    // Layer 2 (Fallback): If MIME type is missing or doesn't match, check the file extension.
+    if (file.originalFilename) {
+        const extension = file.originalFilename.split('.').pop().toLowerCase();
+
+        const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'wmv'];
+        const audioExtensions = ['mp3', 'wav', 'm4a', 'aac', 'flac'];
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'];
+        const docExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv'];
+
+        if (videoExtensions.includes(extension)) return 'video';
+        if (audioExtensions.includes(extension)) return 'audio';
+        if (imageExtensions.includes(extension)) return 'image';
+        if (docExtensions.includes(extension)) return 'documents';
+    }
+
+    // If both checks fail, place it in 'other'.
     return 'other';
 }
 // ------------------------------------
 
 module.exports = async (req, res) => {
-    // The rest of the file remains exactly the same...
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
         return res.status(401).json({ error: 'Unauthorized: No token provided' });
@@ -90,7 +84,8 @@ module.exports = async (req, res) => {
             currentSessionId = newSessionResult.rows[0].id;
         }
 
-        const fileTypeFolder = getFolderForMimeType(uploadedFile.mimetype);
+        // Call the new, robust function
+        const fileTypeFolder = getFolderForFile(uploadedFile);
         const s3Key = `${userEmail}/${fileTypeFolder}/${Date.now()}_${uploadedFile.originalFilename}`;
 
         const uploadParams = {
