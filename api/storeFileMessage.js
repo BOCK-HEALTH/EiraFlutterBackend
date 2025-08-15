@@ -1,3 +1,4 @@
+// api/storeFileMessage.js (FINAL CORRECTED LOGIC 3.0)
 const { IncomingForm } = require('formidable');
 const fs = require('fs/promises');
 const AWS = require('aws-sdk');
@@ -11,38 +12,39 @@ const s3 = new AWS.S3({
     region: process.env.AWS_REGION
 });
 
-// --- FINALIZED HELPER FUNCTION ---
+// --- FINALIZED AND CORRECT HELPER FUNCTION ---
+// This version explicitly checks for each category, ensuring correct placement.
 function getFolderForMimeType(mimeType) {
-    if (!mimeType) return 'documents'; // Default for unknown types
+    if (!mimeType) return 'documents'; // Default for safety
 
+    // 1. Check for video first
+    if (mimeType.startsWith('video/')) {
+        return 'video';
+    }
+    // 2. Then check for audio
     if (mimeType.startsWith('audio/')) {
         return 'audio';
     }
+    // 3. Then check for images
     if (mimeType.startsWith('image/')) {
         return 'image';
     }
     
-    // Check for specific document types
+    // 4. Check against a list of common document types
     const documentMimeTypes = [
         'application/pdf',
         'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'text/plain',
-        'text/csv'
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+        'application/vnd.ms-excel', // .xls
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
     ];
-
+    
     if (documentMimeTypes.includes(mimeType) || mimeType.startsWith('text/')) {
         return 'documents';
     }
-    
-    // --- THIS IS THE FIX ---
-    // Any remaining file types (which in your case are videos) will now go into the 'video' folder.
-    // This directly changes the 'other' folder to be named 'video'.
-    return 'video'; 
+
+    // 5. If it matches nothing else, place it in an 'other' folder.
+    return 'other';
 }
 // ------------------------------------
 
