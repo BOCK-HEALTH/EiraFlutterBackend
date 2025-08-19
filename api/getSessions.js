@@ -1,36 +1,26 @@
-// eira-backend/api/getSessions.js
+// api/getSessions.js (FINAL SECURE CODE)
+const pool = require('./_utils/db');
+const { getUserEmailFromToken } = require('./_utils/firebase');
 
-const path = require('path');
-const {admin} = require(path.resolve(process.cwd(), 'api/_utils/firebase.js'));
-const pool = require(path.resolve(process.cwd(), 'api/_utils/neon.js'));
-
-module.exports = async (request, response) => {
-  if (request.method === 'OPTIONS') {
-    return response.status(200).end();
+module.exports = async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
   }
-
-  const authHeader = request.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return response.status(401).send({ error: 'Unauthorized: No token provided' });
-  }
-  const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const userEmail = decodedToken.email;
-
+    const userEmail = await getUserEmailFromToken(token);
     if (!userEmail) {
-      return response.status(400).send({ error: 'User email not found in token.' });
+      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
     }
 
-    // Query the chat_sessions table for the user's email, newest first
-    const query = 'SELECT * FROM chat_sessions WHERE user_email = $1 ORDER BY created_at DESC';
-    const { rows } = await pool.query(query, [userEmail]);
-
-    return response.status(200).json(rows);
-
-  } catch (error) {
-    console.error("Error in getSessions:", error);
-    return response.status(500).send({ error: 'Internal Server Error' });
+    const result = await pool.query(
+      'SELECT * FROM chat_sessions WHERE user_email = $1 ORDER BY created_at DESC',
+      [userEmail]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching sessions:', err);
+    res.status(500).json({ error: 'Database error' });
   }
 };
