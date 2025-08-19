@@ -1,197 +1,144 @@
-# 🩺 Eira Mobile App Backend
+# Eira Backend – AWS Deployment Guide 
 
-This repository contains the **serverless Node.js backend** for the **Eira AI Health Assistant** mobile application. It is built to be deployed on **Vercel** and handles **user authentication, chat history, session management, and file storage**.
+## **Overview**
 
----
+This guide explains how to deploy **Eira Backend** on AWS EC2 securely  including:
 
-## 🧰 Core Technologies
-
-| Component          | Technology                    |
-| ------------------ | ----------------------------- |
-| **Runtime**        | Node.js                       |
-| **Deployment**     | Vercel Serverless Functions   |
-| **Authentication** | Firebase Admin SDK            |
-| **Database**       | Neon (PostgreSQL, serverless) |
-| **File Storage**   | Firebase Cloud Storage        |
+* Launching EC2
+* Installing dependencies
+* Securing AWS credentials
+* Running the backend with PM2
+* Recovering from leaked AWS keys
 
 ---
 
-## 🔗 API Endpoints
+## **1. Prerequisites**
 
-> All endpoints are under `/api/` and require an `Authorization: Bearer <FirebaseIdToken>` header.
-
-| Method | Endpoint                 | Description                                                                   |
-| ------ | ------------------------ | ----------------------------------------------------------------------------- |
-| GET    | `/api/getSessions`       | Fetch all chat sessions for the authenticated user (most recent first).       |
-| GET    | `/api/getMessages`       | Fetch messages for a session (`?sessionId=...`) or the most recent one.       |
-| POST   | `/api/storeMessage`      | Stores a new **text-only** message. Creates a session if `sessionId` is null. |
-| POST   | `/api/storeFileMessage`  | ❌ **Deprecated.** Use `generateUploadUrl` & `finalizeUpload` instead.         |
-| POST   | `/api/generateUploadUrl` | Generates a signed upload URL for Firebase Storage.                           |
-| POST   | `/api/finalizeUpload`    | Saves uploaded file metadata to the database.                                 |
-| POST   | `/api/updateSession`     | Updates session title or properties.                                          |
-| POST   | `/api/deleteSession`     | Deletes a session and all associated messages.                                |
+* AWS account with EC2 and IAM permissions
+* Backend source code in GitHub
+* Node.js and PM2 knowledge
 
 ---
 
-## 📁 Project Structure
+## **2. Launch EC2 Instance**
 
-```
-/
-├── api/                    # Vercel turns each file here into an API endpoint
-│   ├── _utils/             # Helper modules
-│   │   ├── firebase.js     # Firebase Admin SDK setup
-│   │   └── neon.js         # Neon DB connection pool
-│   ├── getMessages.js      # API logic
-│   └── ...                 # Other endpoints
-├── .env.development        # Environment variables (ignored by Git)
-├── .gitignore              # Files to ignore
-├── package.json            # Dependencies
-└── vercel.json             # Vercel config
-```
+1. **Instance** → Ubuntu LTS AMI
+2. **Type** → t2.micro (test) or larger
+3. **Key pair** → Create or use existing
+4. **Security Group inbound rules**:
+
+   * **22** (SSH) → Your IP
+   * **8080** (Backend port) → Anywhere (or your client IP only)
+5. Launch instance.
 
 ---
 
-## ⚙️ Setup and Local Development
-
-### 1. Prerequisites
-
-* Node.js (v18+)
-* [Vercel CLI](https://vercel.com/docs/cli)
-* [Firebase Project](https://console.firebase.google.com/)
-* [Neon PostgreSQL Account](https://neon.tech)
-
----
-
-### 2. Clone and Install Dependencies
+## **3. Connect to EC2**
 
 ```bash
-# Clone the repository
-git clone https://github.com/BOCK-HEALTH/EiraFlutterBackend.git
+ssh -i your-key.pem ubuntu@<EC2_PUBLIC_IP>
+```
+
+---
+
+## **4. Install Dependencies**
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install nodejs npm git -y
+sudo npm install pm2 -g
+```
+
+---
+
+## **5. Clone & Configure App**
+
+```bash
+git clone https://github.com/your-username/EiraFlutterBackend.git
 cd EiraFlutterBackend
+```
 
-# Install dependencies
-npm install
+**Never commit `.env` to GitHub**
+Add to `.gitignore`:
+
+```
+.env
+.env.*
 ```
 
 ---
 
-## 🗃️ Set Up Neon (PostgreSQL)
-
-### ✅ Step-by-Step:
-
-1. **Go to** [https://neon.tech](https://neon.tech) and sign up.
-
-2. **Create a new project** (select PostgreSQL).
-
-3. **Copy the connection string**, e.g.:
-
-   ```
-   postgres://your_user:your_password@ep-neon-db.neon.tech/dbname
-   ```
-
-4. **Open the SQL Editor** and run the schema below:
-
-```sql
-CREATE TABLE users (
-  email TEXT PRIMARY KEY,
-  name TEXT
-);
-
-CREATE TABLE chat_sessions (
-  id SERIAL PRIMARY KEY,
-  user_email TEXT REFERENCES users(email) ON DELETE CASCADE,
-  title TEXT DEFAULT 'Untitled Session',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE chat_history (
-  id SERIAL PRIMARY KEY,
-  user_email TEXT REFERENCES users(email) ON DELETE CASCADE,
-  session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
-  message TEXT,
-  sender TEXT CHECK (sender IN ('user', 'eira')),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  file_url TEXT[],
-  file_type TEXT[]
-);
-```
-
----
-
-## 🔐 Set Up Firebase Admin SDK
-
-### ✅ Steps:
-
-1. Go to [Firebase Console](https://console.firebase.google.com/).
-2. Select your project > Go to **Project Settings** > **Service Accounts**.
-3. Click **Generate New Private Key** – this downloads a JSON file.
-4. Open the JSON and copy:
-
-   * `project_id`
-   * `client_email`
-   * `private_key`
-
----
-
-## 📄 Environment Variables Setup
-
-Create a file named `.env.development` in the project root:
-
-```env
-# Neon Database
-DATABASE_URL="postgres://your_user:your_password@ep-neon-db.neon.tech/dbname"
-
-# Firebase Admin
-FIREBASE_PROJECT_ID="your_project_id"
-FIREBASE_CLIENT_EMAIL="firebase-adminsdk-abc123@your_project.iam.gserviceaccount.com"
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...<newline escaped key>...\n-----END PRIVATE KEY-----\n"
-
-# Firebase Storage
-FIREBASE_STORAGE_BUCKET="your_project_id.appspot.com"
-```
-
----
-
-## ▶️ Local Development
+## **6. Set Environment Variables Securely**
 
 ```bash
-# Install Vercel CLI globally
-npm install -g vercel
-
-# Start local serverless environment
-vercel dev
+nano ~/.bashrc
 ```
 
-Visit: [http://localhost:3000](http://localhost:3000)
+Add:
+
+```bash
+export AWS_ACCESS_KEY_ID=new_access_key
+export AWS_SECRET_ACCESS_KEY=new_secret_key
+export OTHER_ENV_VARIABLE=value
+```
+
+Reload:
+
+```bash
+source ~/.bashrc
+```
 
 ---
 
-## 🚀 Deploy to Vercel (CI/CD)
+## **7. Handling Compromised AWS Keys**
 
-### ✅ Initial Setup:
+If AWS applies **`AWSCompromisedKeyQuarantineV3`**:
 
-1. Go to [https://vercel.com](https://vercel.com) and sign in.
-2. Click **"Add New Project"**, import this GitHub repo.
-3. **Choose "Framework: Other"** (since this is a custom Node.js backend).
-4. In **Environment Variables**, add all entries from your `.env.development`.
+1. Create a new key in **IAM → Users → eira-backend-user → Security Credentials**
+2. Update EC2 with the new key (`~/.bashrc`)
+3. Deactivate the old key (don’t delete yet)
+4. Test backend
+5. Delete old key
+6. Remove quarantine policy in **IAM → Permissions → Remove**
 
-### ✅ Trigger Deployments
+**Clean Git history:**
 
-* Every `git push` to the `main` branch triggers a new deployment.
-* You can manually trigger a deployment from the Vercel dashboard too.
+```bash
+git filter-repo --path .env.development --invert-paths
+git push --force
+```
 
 ---
 
-## 🧪 Testing API Endpoints
+## **8. Start Backend with PM2**
 
-Use tools like [Postman](https://www.postman.com/) or [cURL](https://curl.se/) with an authenticated Firebase ID token:
-
-Example `GET` request to fetch sessions:
-
-```http
-GET /api/getSessions
-Host: your-vercel-app.vercel.app
-Authorization: Bearer <FirebaseIdToken>
+```bash
+npm install
+pm2 start server.js --name eira-backend
+pm2 startup
+pm2 save
 ```
 
+---
+
+## **9. Access the Backend**
+
+The backend will be available at:
+
+```
+http://<EC2_PUBLIC_IP>:8080
+```
+
+(Replace `8080` with your app’s configured port.)
+
+---
+
+## **10. Security Best Practices**
+
+* Never push `.env` to GitHub
+* Rotate AWS keys regularly
+* Restrict Security Group inbound rules to trusted IPs
+* Use HTTPS if exposing to public clients (via ALB or CloudFront)
+
+---
 
