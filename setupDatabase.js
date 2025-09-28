@@ -1,13 +1,12 @@
 // setupDatabase.js (CORRECTED)
+// setupDatabase.js (UPDATED FOR JWT AUTHENTICATION)
 
-// --- THIS IS THE FIX ---
-// This line MUST be at the top to load the .env file before anything else runs.
+// This line loads the .env file so the script can find the database.
 require('dotenv').config();
-// ----------------------
 
 const pool = require('./api/_utils/db');
 
-// All the correct CREATE TABLE commands are here in one multi-line string.
+// The SQL query now includes the required 'password' column in the 'users' table.
 const createTablesQuery = `
   DROP TABLE IF EXISTS chat_history;
   DROP TABLE IF EXISTS chat_sessions;
@@ -16,6 +15,7 @@ const createTablesQuery = `
   CREATE TABLE users (
       email VARCHAR(255) PRIMARY KEY,
       name VARCHAR(255),
+      password VARCHAR(255) NOT NULL, -- <<< THIS IS THE CRUCIAL ADDITION
       created_at TIMESTAMPTZ DEFAULT NOW()
   );
 
@@ -45,9 +45,9 @@ async function setup() {
     client = await pool.connect();
     console.log("Successfully connected!");
 
-    console.log("Running setup script to create tables...");
+    console.log("Running setup script to create tables with new schema...");
     await client.query(createTablesQuery);
-    console.log("SUCCESS: Database tables created successfully!");
+    console.log("SUCCESS: Database tables created successfully for JWT authentication!");
 
   } catch (err) {
     console.error("ERROR: Failed to set up the database.", err);

@@ -1,13 +1,7 @@
-// api/storeMessage.js (FINAL CORRECTED CODE)
+// api/storeMessage.js (JWT Refactored)
 const pool = require('./_utils/db');
-const { getUserEmailFromToken } = require('./_utils/firebase');
 
 module.exports = async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
-  }
-  
   const { message, sessionId: existingSessionId, title } = req.body;
   if (!message) {
       return res.status(400).json({ error: 'Message content is required.' });
@@ -15,27 +9,21 @@ module.exports = async (req, res) => {
 
   let client;
   try {
-    const userEmail = await getUserEmailFromToken(token);
-    if (!userEmail) {
-      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-    }
+    const userEmail = req.user.email; // Get email securely from the token.
+    const userName = req.user.name;   // We can also get the name from the token payload.
 
     client = await pool.connect();
     await client.query('BEGIN');
-
-    // --- THIS IS THE FIX ---
-    // First, ensure the user exists in the 'users' table before doing anything else.
-    // The ON CONFLICT clause makes this a safe "upsert" - it does nothing if the user already exists.
+    
+    // First, ensure the user exists in the 'users' table.
     await client.query(
-        'INSERT INTO users (email, name) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING',
-        [userEmail, userEmail.split('@')[0]] // Use the email as the name for simplicity
+        'INSERT INTO users (email, name, password) VALUES ($1, $2, $3) ON CONFLICT (email) DO NOTHING',
+        [userEmail, userName, 'placeholder_password_not_used'] // We need a value for password, but it's not used here.
     );
-    // ----------------------
 
     let currentSessionId = existingSessionId;
 
     if (!currentSessionId) {
-        // Now that the user is guaranteed to exist, this INSERT will succeed.
         const sessionTitle = title || `Chat on ${new Date().toLocaleDateString()}`;
         const newSessionResult = await client.query(
             "INSERT INTO chat_sessions (user_email, title) VALUES ($1, $2) RETURNING id",
@@ -56,7 +44,7 @@ module.exports = async (req, res) => {
   } catch (err) {
     if (client) await client.query('ROLLBACK');
     console.error('Error storing message:', err);
-    res.status(500).json({ error: 'Database error' });
+    res.status(500).json({ error: 'Internal Server Error' });
   } finally {
     if (client) client.release();
   }
